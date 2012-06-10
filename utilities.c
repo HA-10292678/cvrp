@@ -100,7 +100,7 @@ int * generate_random_vector()
    int     i, help, node, tot_assigned = 0;
    double  rnd;
 
-   random_vector = malloc(ncities * sizeof(int));  
+   random_vector = malloc((1 + ncities) * sizeof(int));  
 
    for ( i = 0 ; i < ncities; i++) 
      random_vector[i] = i;

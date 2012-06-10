@@ -5,6 +5,18 @@
 #include "utilities.h"
 #include "ls.h"
 
+/*Function that solves the instance of TSP contained in the array 'arr'
+ * between 'lower' and 'upper' using the function tsp.
+ *
+ * Input: arr -> Array containing the instances of TSP
+ *        lower -> Position to start taking cities from arr
+ *        upper -> Last position from which to take cities from arr
+ *        distMatGen -> Distance matrix
+ * Output: None
+ * Side effect: arr has, between lower and upper, a solution to a local TSP
+ */
+void boxTSP(int *arr, int lower, int upper, int **distMatGen);
+
 /*
  * Function that solves an instance of a tsp using ILS as heuristic
  * Input: best -> Pointer to the array where the best solution should be saved
@@ -20,7 +32,7 @@ void tsp(int *best);
  * Output: None
  * Side effects: t1 contains a neighbour of t0
  */
-void random_neighbour(int *t0, int *t1);
+void random_neighbour(int *t);
 
 /*
  * Function that calculates the probability used to select a neighbour on SHC
