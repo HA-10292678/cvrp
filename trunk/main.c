@@ -325,6 +325,9 @@ int initSol(int *arr, int *limits, int **dist, int *caps, int *st, int ncities, 
         }
         
         if(!foundMatch){
+            /* gracias a la siguiente línea se tuvo que inicializar con ceros st en el main.
+               si ocurren fallas puede ser porque aquí se accede a una posición de st no inicializada por
+               este algoritmo. en cuyo caso está tomando el valor cero que se le colocó en el main */
             if((dist[0][pairs[i]->city0] + dist[pairs[i]->city0][pairs[i]->city1] + dist[0][pairs[i]->city1]
                 + st[pairs[i]->city0] + st[pairs[i]->city1] < mst)
                 &&
