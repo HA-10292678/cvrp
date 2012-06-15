@@ -1,9 +1,50 @@
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
+#include <string.h>
+
 #include "instance.h"
 #include "utilities.h"
 #include "ls.h"
+
+typedef struct 
+{
+    int city0;
+    int city1;
+}city_pair;
+
+/*
+ * Function that finds an initial solution to the CVRP using the heuristic
+ * proposed by Clark and Wright, the Savings algorithm
+ * 
+ * Input: arr -> Array where the initial solution should be set
+ *        limits -> Array where the values of the tour limits should be set
+ *        dist -> Matrix containing the distances to reach each city from
+ *                   from each other
+ *        caps -> Array containing the capacity of each customer
+ *        st -> Array containing the service time for each client
+ *        ncities -> Number of cities being considered
+ *        mst -> Maximum service time
+ *        mcap -> Maximum capacity a vehicle can handle
+ * Output: Integer contining the number of tours generated
+ * Side effects: tours contains all the tours that conform an initial solution
+ *               to the CVRP and limits contains the limits of each tour in the
+ *               preceding array
+ */
+int initSol(int *arr, int *limits, int **dist, int *caps, int *st, int ncities, int mst, int mcap);
+
+/*
+ * Function that sorts a group of pairs of cities in descending order using 
+ * mergeSort
+ *
+ * Input: arr -> Array to be sorted
+ *        s -> Savings matrix
+ *        start -> Position from which to start sorting
+ *        end -> Position at which the function should end the sort 
+ * Output: none
+ * Side effects: arr is sorted
+ */
+void sortPairs(city_pair **arr, int **s, int start, int end);
 
 /*Function that solves the instance of TSP contained in the array 'arr'
  * between 'lower' and 'upper' using the function tsp.

@@ -1,14 +1,18 @@
 #include "main.h"
 
-int main(int argc, char **argv){
-    int i, lower, upper, ncitiesGen;
-    int *arr;
+int main(int argc, char **argv)
+{
+    int i, lower, upper, ncitiesGen, mst, mcap;
+    int *arr, *limits, *caps, *st;
     int **distMatGen;
     
     read_instance(argv[1]);
     
     ncitiesGen = ncities;
     arr = malloc(sizeof(int) * (ncitiesGen + 1));
+    limits = malloc(sizeof(int) * (ncitiesGen));
+    caps = malloc(sizeof(int) * (ncitiesGen));
+    st = malloc(sizeof(int) * (ncitiesGen));
     
     for(i = 0; i < ncitiesGen; ++ i)
         arr[i] = i;
@@ -17,7 +21,8 @@ int main(int argc, char **argv){
     upper = 20;
     
     distMatGen = compute_distances();
-
+    
+    initSol(arr, limits, distMatGen, caps, st, ncitiesGen, mst, mcap);
     boxTSP(arr, lower, upper, distMatGen);
     distMat = distMatGen;
     
@@ -124,7 +129,7 @@ void tsp(int *best){
 }
 
 void random_neighbour(int *t){
-    int r0, r1, i;
+    int r0, r1;
     clock_t ticks;
     
     ticks = clock();
@@ -164,4 +169,191 @@ void copy_tour(int *t0, int *t1){
     int i;
     for(i = 0; i <= ncities; ++i)
         t1[i] = t0[i];
+}
+
+int initSol(int *arr, int *limits, int **dist, int *caps, int *st, int ncities, int mst, int mcap){
+    int i, j, k, numPairs = ((ncities - 1) * ((ncities - 1) - 1) / 2), ammTour = 0, start;
+    int foundMatch = 0;
+    int isNotAvailable[ncities];
+    int tourTime[numPairs], ammCitiesTour[numPairs], tourCap[numPairs], *at;
+    int **savings, tours[numPairs][ncities];
+    city_pair **pairs = malloc(numPairs * sizeof(city_pair *));
+    city_pair *pair;
+   
+    memset(tourTime, 0, numPairs);
+    memset(ammCitiesTour, 0, numPairs);
+    memset(tourCap, 0, numPairs);
+    memset(isNotAvailable, 0, ncities);
+    /*Memory allocation for savings*/
+    if((savings = malloc(sizeof( int) * ncities * ncities +
+                sizeof( int *) * ncities )) == NULL){
+        printf("Out of memory, exit.");
+        exit(1);
+    }
+    
+    for ( i = 1; i < ncities ; ++ i) {
+        savings[i] = (int *)(savings + ncities) + i*ncities;
+        for ( j = i  ; j < ncities ; ++ j) {
+            savings[i][j] = (2 * dist[0][i] + 2 * dist[0][j]) - (dist[0][i] + dist[i][j] + dist[j][0]);
+        }
+    }
+    
+    k = 0;
+    for(i = 1; i < ncities; ++ i){
+        for(j = i + 1; j < ncities; ++ j){
+            if((pair = (city_pair *)malloc(sizeof(city_pair))) == NULL){
+                printf("Out of memory, exit.");
+                exit(1);
+            }
+            pair->city0 = i;
+            pair->city1 = j;
+            pairs[k] = pair;
+            ++ k;
+        }
+    }
+    
+    sortPairs(pairs, savings, 0, numPairs);
+
+    /*
+     * Parallel version of the Clark and Wright algorithm
+     */
+    for(i = 0; i < numPairs; ++i){
+        if(isNotAvailable[pairs[i]->city0] || isNotAvailable[pairs[i]->city1])
+            continue;
+        
+        foundMatch = 0;
+        for(j = 0; j < ammTour; ++ j){
+            at = tours[j];
+            if(pairs[i]->city0 == at[0]){
+                if(((tourTime[j] - dist[0][at[0]]) + 
+                    (dist[0][pairs[i]->city1] + dist[pairs[i]->city1][at[0]] + st[pairs[i]->city1]) < mst)
+                    &&
+                    (tourCap[j] + caps[pairs[i]->city1] < mcap)){
+                        for(k = ammCitiesTour[j]; k > 0; -- k)
+                            at[k + 1] = at[k];
+                        at[0] = pairs[i]->city1;
+                        isNotAvailable[at[1]] = 1;
+                        tourTime[j] = (tourTime[j] - dist[0][at[1]])
+                                    + (dist[0][at[0]] + dist[at[0]][at[1]]
+                                       + st[at[0]]);
+                        tourCap[j] = tourCap[j] + caps[pairs[i]->city1];
+                        ++ ammCitiesTour[j];
+                        foundMatch = 1;
+                        break;
+                }
+            }else if(pairs[i]->city0 == at[ammCitiesTour[j] - 1]){
+                if(((tourTime[j] - dist[0][at[ammCitiesTour[j] - 1]]) + 
+                    (dist[0][pairs[i]->city1] + dist[pairs[i]->city1][at[ammCitiesTour[j] - 1]] 
+                     + st[pairs[i]->city1]) < mst)
+                    &&
+                    (tourCap[j] + caps[pairs[i]->city1] < mcap)){
+                        at[ammCitiesTour[j]] = pairs[i]->city1;
+                        isNotAvailable[at[ammCitiesTour[j] - 1]] = 1;
+                        tourTime[j] = (tourTime[j] - dist[0][at[ammCitiesTour[j] - 1]])
+                                    + (dist[0][pairs[i]->city1] + dist[pairs[i]->city1][at[ammCitiesTour[j] - 1]]
+                                       + st[pairs[i]->city1]);
+                        tourCap[j] = tourCap[j] + caps[pairs[i]->city1];
+                        ++ ammCitiesTour[j];
+                        foundMatch = 1;
+                        break;
+                }
+            }else if(pairs[i]->city1 == at[0]){
+                if(((tourTime[j] - dist[0][at[0]]) + 
+                    (dist[0][pairs[i]->city0] + dist[pairs[i]->city0][at[0]] + st[pairs[i]->city0]) < mst)
+                    &&
+                    (tourCap[j] + caps[pairs[i]->city0] < mcap)){
+                        for(k = ammCitiesTour[j]; k > 0; -- k)
+                            at[k + 1] = at[k];
+                        at[0] = pairs[i]->city0;
+                        isNotAvailable[at[1]] = 1;
+                        tourTime[j] = (tourTime[j] - dist[0][at[1]])
+                                    + (dist[0][at[0]] + dist[at[0]][at[1]]
+                                       + st[at[0]]);
+                        tourCap[j] = tourCap[j] + caps[pairs[i]->city0];
+                        ++ ammCitiesTour[j];
+                        foundMatch = 1;
+                        break;
+                }            
+            }else if(pairs[i]->city1 == at[ammCitiesTour[j] - 1]){
+                if(((tourTime[j] - dist[0][at[ammCitiesTour[j] - 1]]) + 
+                    (dist[0][pairs[i]->city0] + dist[pairs[i]->city0][at[ammCitiesTour[j] - 1]] 
+                     + st[pairs[i]->city0]) < mst)
+                    &&
+                    (tourCap[j] + caps[pairs[i]->city0] < mcap)){
+                        at[ammCitiesTour[j]] = pairs[i]->city0;
+                        isNotAvailable[at[ammCitiesTour[j] - 1]] = 1;
+                        tourTime[j] = (tourTime[j] - dist[0][at[ammCitiesTour[j] - 1]])
+                                    + (dist[0][pairs[i]->city0] + dist[pairs[i]->city0][at[ammCitiesTour[j] - 1]]
+                                       + st[pairs[i]->city0]);
+                        tourCap[j] = tourCap[j] + caps[pairs[i]->city0];
+                        ++ ammCitiesTour[j];
+                        foundMatch = 1;
+                        break;
+                }            
+            }
+        }
+        
+        if(!foundMatch){
+            if((dist[0][pairs[i]->city0] + dist[pairs[i]->city0][pairs[i]->city1] + dist[0][pairs[i]->city1]
+                + st[pairs[i]->city0] + st[pairs[i]->city1] < mst)
+                &&
+                caps[pairs[i]->city0] + caps[pairs[i]->city1] < mcap){
+                tours[ammTour][0] = pairs[i]->city0;
+                tours[ammTour][1] = pairs[i]->city1;
+                tourTime[ammTour] = dist[0][pairs[i]->city0] + dist[pairs[i]->city0][pairs[i]->city1] + dist[0][pairs[i]->city1]
+                                    + st[pairs[i]->city0] + st[pairs[i]->city1];
+                tourCap[ammTour] = caps[pairs[i]->city0] + caps[pairs[i]->city1];
+                ammCitiesTour[ammTour] = 2;
+                ++ ammTour;
+            }
+        }
+    }
+    
+    /*
+     * Now we write each tour and set the limits
+     */
+    for(i = 0; i < ammTour; ++ i){
+        start = (i == 0 ? 0 : limits[i - 1]);
+        for (j = 0; j < ammCitiesTour[i]; ++j){
+            arr[start + j] = tours[i][j];
+        }
+        limits[i] = start + ammCitiesTour[i];
+    }
+    
+    return ammTour;
+}
+
+void sortPairs(city_pair **arr, int **s, int start, int end){
+    if(start == end - 1)
+        return;
+    
+    sortPairs(arr, s, start, (start + end) / 2);
+    sortPairs(arr, s, (start + end) / 2, end);
+    
+    int i = start, j = (end + start) / 2, k = 0;
+    city_pair **tmp = malloc((end - start + 1) * sizeof(city_pair *));
+    while((i < ((end + start) / 2)) || (j < end)){
+        if(i >= (end + start) / 2){
+            tmp[k] = arr[j];
+            ++ j;
+        }else if(j >= end){
+            tmp[k] = arr[i];
+            ++ i;
+        }else{
+            if(s[arr[i]->city0][arr[i]->city1] > s[arr[j]->city0][arr[j]->city1]){
+                tmp[k] = arr[i];
+                ++ i;
+            }else{
+                tmp[k] = arr[j];
+                ++ j;
+            }
+        }
+        ++ k;
+    }
+        
+    for(k = 0; k < end - start; ++ k)
+        arr[start + k] = tmp[k];
+    
+    free(tmp);
+    return;
 }
