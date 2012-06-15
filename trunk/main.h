@@ -13,8 +13,7 @@ typedef struct
     int city1;
 }city_pair;
 
-int capacity, maxtime, droptime, xdepot, ydepot;
-double *zc;
+int capacity, maxtime, droptime, xdepot, ydepot, *zc;
 
 
 extern double   *xc, *yc;

@@ -54,13 +54,13 @@ void read_cvrp(char *filename){
 	exit(EXIT_FAILURE);
     if( (yc = malloc(sizeof(double) * ncities)) == NULL )
 	exit(EXIT_FAILURE);
-    if( (zc = malloc(sizeof(double) * ncities)) == NULL )
+    if( (zc = malloc(sizeof(int) * ncities)) == NULL )
 	exit(EXIT_FAILURE);
 
     /* for each customer in turn: x-coordinate, y-coordinate, quantity */
     int i;
     for (i = 0 ; i < ncities ; i++ ) {
-        fscanf(cvrp_file,"%lf %lf %lf", &xc[i], &yc[i], &zc[i] );
+        fscanf(cvrp_file,"%lf %lf %d", &xc[i], &yc[i], &zc[i] );
     }
 
     distance = round_distance;
