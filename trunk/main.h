@@ -13,6 +13,24 @@ typedef struct
     int city1;
 }city_pair;
 
+int capacity, maxtime, droptime, xdepot, ydepot;
+double *zc;
+
+
+extern double   *xc, *yc;
+extern int   round_distance (int i, int j);
+
+
+/*
+ * Function that reads an instance of a crvp problem and sets up the corresponding
+ * variables
+ *
+ * Input: string -> filename which contains the graph
+ * Output: none
+ * Side effects: ncitites, capacity, maxtime, droptime, xdepot, ydepot, xc, yc, zc are set
+ */
+void read_cvrp(char *filename);
+
 /*
  * Function that finds an initial solution to the CVRP using the heuristic
  * proposed by Clark and Wright, the Savings algorithm

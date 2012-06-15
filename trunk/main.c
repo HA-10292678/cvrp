@@ -6,13 +6,14 @@ int main(int argc, char **argv)
     int *arr, *limits, *caps, *st;
     int **distMatGen;
     
-    read_instance(argv[1]);
+    read_cvrp(argv[1]);
     
     ncitiesGen = ncities;
     arr = malloc(sizeof(int) * (ncitiesGen + 1));
     limits = malloc(sizeof(int) * (ncitiesGen));
     caps = malloc(sizeof(int) * (ncitiesGen));
     st = malloc(sizeof(int) * (ncitiesGen));
+    memset(st, 0, sizeof(int) * ncitiesGen);
     
     for(i = 0; i < ncitiesGen; ++ i)
         arr[i] = i;
@@ -33,6 +34,36 @@ int main(int argc, char **argv)
     printf("\n");
 
     return 1;
+}
+
+void read_cvrp(char *filename){
+
+    FILE *cvrp_file = fopen(filename, "r");
+    if ( cvrp_file == NULL ) {
+        fprintf(stderr,"No instance file specified, abort\n");
+        exit(1);
+    }
+    printf("\nreading cvrp-file %s ... \n\n", filename);
+
+    /* number of customers, vehicle capacity, maximum route time, drop time */
+    fscanf(cvrp_file, "%d %d %d %d", &ncities, &capacity, &maxtime, &droptime);
+    /* depot x-coordinate, depot y-coordinate */
+    fscanf(cvrp_file, "%d %d", &xdepot, &ydepot);
+
+    if( (xc = malloc(sizeof(double) * ncities)) == NULL )
+	exit(EXIT_FAILURE);
+    if( (yc = malloc(sizeof(double) * ncities)) == NULL )
+	exit(EXIT_FAILURE);
+    if( (zc = malloc(sizeof(double) * ncities)) == NULL )
+	exit(EXIT_FAILURE);
+
+    /* for each customer in turn: x-coordinate, y-coordinate, quantity */
+    int i;
+    for (i = 0 ; i < ncities ; i++ ) {
+        fscanf(cvrp_file,"%lf %lf %lf", &xc[i], &yc[i], &zc[i] );
+    }
+
+    distance = round_distance;
 }
 
 void boxTSP(int *arr, int lower, int upper, int **distMatGen){
@@ -180,10 +211,10 @@ int initSol(int *arr, int *limits, int **dist, int *caps, int *st, int ncities, 
     city_pair **pairs = malloc(numPairs * sizeof(city_pair *));
     city_pair *pair;
    
-    memset(tourTime, 0, numPairs);
-    memset(ammCitiesTour, 0, numPairs);
-    memset(tourCap, 0, numPairs);
-    memset(isNotAvailable, 0, ncities);
+    memset(tourTime, 0, numPairs * sizeof(int));
+    memset(ammCitiesTour, 0, numPairs * sizeof(int));
+    memset(tourCap, 0, numPairs * sizeof(int));
+    memset(isNotAvailable, 0, ncities * sizeof(int));
     /*Memory allocation for savings*/
     if((savings = malloc(sizeof( int) * ncities * ncities +
                 sizeof( int *) * ncities )) == NULL){
