@@ -1,5 +1,5 @@
 
-#GCC_DEBUG=-ggdb
+GCC_DEBUG=-ggdb
 
 make: main.o instance.o utilities.o timer.o ls.o
 	gcc $(GCC_DEBUG) -O main.o timer.o instance.o utilities.o ls.o -o cvrp-test -lm -ansi -Wall
