@@ -2,8 +2,8 @@
 
 int main(int argc, char **argv)
 {
-    int i, lower, upper, ncitiesGen, mst, mcap;
-    int *arr, *limits, *caps, *st;
+    int i, j, lower, upper, ncitiesGen, nTours;
+    int *arr, *limits;
     int **distMatGen;
     
     read_cvrp(argv[1]);
@@ -11,19 +11,44 @@ int main(int argc, char **argv)
     ncitiesGen = ncities;
     arr = malloc(sizeof(int) * (ncitiesGen + 1));
     limits = malloc(sizeof(int) * (ncitiesGen));
-    caps = malloc(sizeof(int) * (ncitiesGen));
-    st = malloc(sizeof(int) * (ncitiesGen));
-    memset(st, 0, sizeof(int) * ncitiesGen);
     
     for(i = 0; i < ncitiesGen; ++ i)
         arr[i] = i;
     
-    lower = 10;
-    upper = 20;
-    
     distMatGen = compute_distances();
     
-    initSol(arr, limits, distMatGen, caps, st, ncitiesGen, mst, mcap);
+    nTours = initSol(arr, limits, distMatGen, ncitiesGen);
+    
+    /*
+    Print of the initial solutions
+    
+    int servTime;
+    int capacity;
+    for(i = 0; i < nTours; ++ i){
+        printf("Tour %d: ", i);
+        for(j = (i == 0 ? 0 : limits[i - 1]); j < limits[i]; ++j){
+            printf("%d ", arr[j]);
+        }
+        printf("\n");
+        servTime = 0;
+        capacity = 0;
+        for(j = (i == 0 ? 0 : limits[i - 1]); j < limits[i] - 1; ++ j){
+            servTime += distMatGen[arr[j]][arr[j + 1]] + dt;
+            capacity += caps[arr[j]];
+        }
+        
+        servTime += distMatGen[0][arr[(i == 0 ? 0 : limits[i - 1])]]
+                    + distMatGen[0][arr[limits[i]]]
+                    + dt;
+        capacity += caps[arr[limits[i]]];
+        printf("Service time: %d / %d\n", servTime, mst);
+        printf("Capacity: %d / %d", capacity, mcap);
+        printf("\n\n");
+    }
+    
+    printf("ncities: %d\n", ncitiesGen);
+    */
+    
     boxTSP(arr, lower, upper, distMatGen);
     distMat = distMatGen;
     
@@ -46,7 +71,7 @@ void read_cvrp(char *filename){
     printf("\nreading cvrp-file %s ... \n\n", filename);
 
     /* number of customers, vehicle capacity, maximum route time, drop time */
-    fscanf(cvrp_file, "%d %d %d %d", &ncities, &capacity, &maxtime, &droptime);
+    fscanf(cvrp_file, "%d %d %d %d", &ncities, &mcap, &mst, &dt);
     /* depot x-coordinate, depot y-coordinate */
     fscanf(cvrp_file, "%d %d", &xdepot, &ydepot);
 
@@ -54,13 +79,14 @@ void read_cvrp(char *filename){
 	exit(EXIT_FAILURE);
     if( (yc = malloc(sizeof(double) * ncities)) == NULL )
 	exit(EXIT_FAILURE);
-    if( (zc = malloc(sizeof(int) * ncities)) == NULL )
+    if( (caps = malloc(sizeof(int) * ncities)) == NULL )
 	exit(EXIT_FAILURE);
-
+   
+    caps = malloc(sizeof(int) * (ncities));
     /* for each customer in turn: x-coordinate, y-coordinate, quantity */
     int i;
     for (i = 0 ; i < ncities ; i++ ) {
-        fscanf(cvrp_file,"%lf %lf %d", &xc[i], &yc[i], &zc[i] );
+        fscanf(cvrp_file,"%lf %lf %d", &xc[i], &yc[i], &caps[i] );
     }
 
     distance = round_distance;
@@ -202,10 +228,10 @@ void copy_tour(int *t0, int *t1){
         t1[i] = t0[i];
 }
 
-int initSol(int *arr, int *limits, int **dist, int *caps, int *st, int ncities, int mst, int mcap){
+int initSol(int *arr, int *limits, int **dist, int ncities){
     int i, j, k, numPairs = ((ncities - 1) * ((ncities - 1) - 1) / 2), ammTour = 0, start;
     int foundMatch = 0;
-    int isNotAvailable[ncities];
+    int isNotAvailable[ncities], isInTour[ncities];
     int tourTime[numPairs], ammCitiesTour[numPairs], tourCap[numPairs], *at;
     int **savings, tours[numPairs][ncities];
     city_pair **pairs = malloc(numPairs * sizeof(city_pair *));
@@ -215,6 +241,7 @@ int initSol(int *arr, int *limits, int **dist, int *caps, int *st, int ncities, 
     memset(ammCitiesTour, 0, numPairs * sizeof(int));
     memset(tourCap, 0, numPairs * sizeof(int));
     memset(isNotAvailable, 0, ncities * sizeof(int));
+    memset(isInTour, 0, ncities * sizeof(int));
     /*Memory allocation for savings*/
     if((savings = malloc(sizeof( int) * ncities * ncities +
                 sizeof( int *) * ncities )) == NULL){
@@ -255,18 +282,36 @@ int initSol(int *arr, int *limits, int **dist, int *caps, int *st, int ncities, 
         foundMatch = 0;
         for(j = 0; j < ammTour; ++ j){
             at = tours[j];
+            /*
+             * If the pair represents the corners of the tour, do not proceed
+             */
+            if((pairs[i]->city0 == at[0] && pairs[i]->city1 == at[ammCitiesTour[j] - 1])
+                ||
+                (pairs[i]->city1 == at[0] && pairs[i]->city0 == at[ammCitiesTour[j] - 1])){
+                foundMatch = 1;
+                break;
+            }
+            
+            /*
+             * Either city is already part of a tour, but cannot be joined with the current tour
+             */ 
+            if((isInTour[pairs[i]->city0] && (pairs[i]->city0 != at[0]) && (pairs[i]->city0 != at[ammCitiesTour[j] - 1]))
+                || 
+                (isInTour[pairs[i]->city1] && (pairs[i]->city1 != at[0]) && (pairs[i]->city1 != at[ammCitiesTour[j] - 1])))
+                continue;
+            
             if(pairs[i]->city0 == at[0]){
                 if(((tourTime[j] - dist[0][at[0]]) + 
-                    (dist[0][pairs[i]->city1] + dist[pairs[i]->city1][at[0]] + st[pairs[i]->city1]) < mst)
+                    (dist[0][pairs[i]->city1] + dist[pairs[i]->city1][at[0]] + dt) < mst)
                     &&
                     (tourCap[j] + caps[pairs[i]->city1] < mcap)){
-                        for(k = ammCitiesTour[j]; k > 0; -- k)
+                        for(k = ammCitiesTour[j]; k >= 0; -- k)
                             at[k + 1] = at[k];
                         at[0] = pairs[i]->city1;
                         isNotAvailable[at[1]] = 1;
                         tourTime[j] = (tourTime[j] - dist[0][at[1]])
                                     + (dist[0][at[0]] + dist[at[0]][at[1]]
-                                       + st[at[0]]);
+                                       + dt);
                         tourCap[j] = tourCap[j] + caps[pairs[i]->city1];
                         ++ ammCitiesTour[j];
                         foundMatch = 1;
@@ -275,14 +320,14 @@ int initSol(int *arr, int *limits, int **dist, int *caps, int *st, int ncities, 
             }else if(pairs[i]->city0 == at[ammCitiesTour[j] - 1]){
                 if(((tourTime[j] - dist[0][at[ammCitiesTour[j] - 1]]) + 
                     (dist[0][pairs[i]->city1] + dist[pairs[i]->city1][at[ammCitiesTour[j] - 1]] 
-                     + st[pairs[i]->city1]) < mst)
+                     + dt) < mst)
                     &&
                     (tourCap[j] + caps[pairs[i]->city1] < mcap)){
                         at[ammCitiesTour[j]] = pairs[i]->city1;
                         isNotAvailable[at[ammCitiesTour[j] - 1]] = 1;
                         tourTime[j] = (tourTime[j] - dist[0][at[ammCitiesTour[j] - 1]])
                                     + (dist[0][pairs[i]->city1] + dist[pairs[i]->city1][at[ammCitiesTour[j] - 1]]
-                                       + st[pairs[i]->city1]);
+                                       + dt);
                         tourCap[j] = tourCap[j] + caps[pairs[i]->city1];
                         ++ ammCitiesTour[j];
                         foundMatch = 1;
@@ -290,16 +335,16 @@ int initSol(int *arr, int *limits, int **dist, int *caps, int *st, int ncities, 
                 }
             }else if(pairs[i]->city1 == at[0]){
                 if(((tourTime[j] - dist[0][at[0]]) + 
-                    (dist[0][pairs[i]->city0] + dist[pairs[i]->city0][at[0]] + st[pairs[i]->city0]) < mst)
+                    (dist[0][pairs[i]->city0] + dist[pairs[i]->city0][at[0]] + dt) < mst)
                     &&
                     (tourCap[j] + caps[pairs[i]->city0] < mcap)){
-                        for(k = ammCitiesTour[j]; k > 0; -- k)
+                        for(k = ammCitiesTour[j]; k >= 0; -- k)
                             at[k + 1] = at[k];
                         at[0] = pairs[i]->city0;
                         isNotAvailable[at[1]] = 1;
                         tourTime[j] = (tourTime[j] - dist[0][at[1]])
                                     + (dist[0][at[0]] + dist[at[0]][at[1]]
-                                       + st[at[0]]);
+                                       + dt);
                         tourCap[j] = tourCap[j] + caps[pairs[i]->city0];
                         ++ ammCitiesTour[j];
                         foundMatch = 1;
@@ -308,14 +353,14 @@ int initSol(int *arr, int *limits, int **dist, int *caps, int *st, int ncities, 
             }else if(pairs[i]->city1 == at[ammCitiesTour[j] - 1]){
                 if(((tourTime[j] - dist[0][at[ammCitiesTour[j] - 1]]) + 
                     (dist[0][pairs[i]->city0] + dist[pairs[i]->city0][at[ammCitiesTour[j] - 1]] 
-                     + st[pairs[i]->city0]) < mst)
+                     + dt) < mst)
                     &&
                     (tourCap[j] + caps[pairs[i]->city0] < mcap)){
                         at[ammCitiesTour[j]] = pairs[i]->city0;
                         isNotAvailable[at[ammCitiesTour[j] - 1]] = 1;
                         tourTime[j] = (tourTime[j] - dist[0][at[ammCitiesTour[j] - 1]])
                                     + (dist[0][pairs[i]->city0] + dist[pairs[i]->city0][at[ammCitiesTour[j] - 1]]
-                                       + st[pairs[i]->city0]);
+                                       + dt);
                         tourCap[j] = tourCap[j] + caps[pairs[i]->city0];
                         ++ ammCitiesTour[j];
                         foundMatch = 1;
@@ -324,23 +369,39 @@ int initSol(int *arr, int *limits, int **dist, int *caps, int *st, int ncities, 
             }
         }
         
-        if(!foundMatch){
-            /* gracias a la siguiente línea se tuvo que inicializar con ceros st en el main.
-               si ocurren fallas puede ser porque aquí se accede a una posición de st no inicializada por
-               este algoritmo. en cuyo caso está tomando el valor cero que se le colocó en el main */
+        if(!foundMatch && !isInTour[pairs[i]->city0] && !isInTour[pairs[i]->city1]){
             if((dist[0][pairs[i]->city0] + dist[pairs[i]->city0][pairs[i]->city1] + dist[0][pairs[i]->city1]
-                + st[pairs[i]->city0] + st[pairs[i]->city1] < mst)
+                + 2 * dt < mst)
                 &&
                 caps[pairs[i]->city0] + caps[pairs[i]->city1] < mcap){
                 tours[ammTour][0] = pairs[i]->city0;
                 tours[ammTour][1] = pairs[i]->city1;
                 tourTime[ammTour] = dist[0][pairs[i]->city0] + dist[pairs[i]->city0][pairs[i]->city1] + dist[0][pairs[i]->city1]
-                                    + st[pairs[i]->city0] + st[pairs[i]->city1];
+                                    + 2 * dt;
                 tourCap[ammTour] = caps[pairs[i]->city0] + caps[pairs[i]->city1];
                 ammCitiesTour[ammTour] = 2;
                 ++ ammTour;
             }
         }
+        
+        /*
+         * Both cities are necessarily now part of a tour
+         */
+        isInTour[pairs[i]->city0] = 1;
+        isInTour[pairs[i]->city1] = 1;
+        
+        /*
+        int p0, p1;
+        printf("amMTour: %d\n", ammTour);
+        for(p0 = 0; p0 < ammTour; ++ p0){
+            printf("Tour %d: ", p0);
+            for(p1 = 0; p1 < ammCitiesTour[p0]; ++ p1){
+                printf("%d, ", tours[p0][p1]);
+            }
+            printf("\n\n");
+        }
+        printf("---------------------------\n");
+        */
     }
     
     /*
