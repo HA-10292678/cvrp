@@ -13,8 +13,7 @@ typedef struct
     int city1;
 }city_pair;
 
-int capacity, maxtime, droptime, xdepot, ydepot, *zc;
-
+int mcap, mst, dt, xdepot, ydepot, *caps;
 
 extern double   *xc, *yc;
 extern int   round_distance (int i, int j);
@@ -38,17 +37,13 @@ void read_cvrp(char *filename);
  *        limits -> Array where the values of the tour limits should be set
  *        dist -> Matrix containing the distances to reach each city from
  *                   from each other
- *        caps -> Array containing the capacity of each customer
- *        st -> Array containing the service time for each client
  *        ncities -> Number of cities being considered
- *        mst -> Maximum service time
- *        mcap -> Maximum capacity a vehicle can handle
  * Output: Integer contining the number of tours generated
  * Side effects: tours contains all the tours that conform an initial solution
  *               to the CVRP and limits contains the limits of each tour in the
  *               preceding array
  */
-int initSol(int *arr, int *limits, int **dist, int *caps, int *st, int ncities, int mst, int mcap);
+int initSol(int *arr, int *limits, int **dist, int ncities);
 
 /*
  * Function that sorts a group of pairs of cities in descending order using 
