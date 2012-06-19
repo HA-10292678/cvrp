@@ -10,7 +10,7 @@ int main(int argc, char **argv)
     
     ncitiesGen = ncities;
     arr = malloc(sizeof(int) * (ncitiesGen + 1));
-    limits = malloc(sizeof(int) * (ncitiesGen));
+    limits = malloc(sizeof(int) * (ncitiesGen + 1));
     
     for(i = 0; i < ncitiesGen; ++ i)
         arr[i] = i;
@@ -18,17 +18,23 @@ int main(int argc, char **argv)
     distMatGen = compute_distances();
     
     nTours = initSol(arr, limits, distMatGen, ncitiesGen);
-    for(i = 0; i < ncitiesGen; ++ i)
+    /*for(i = 0; i < ncitiesGen; ++ i)
         printf("%d, ", arr[i]);
     
     printf("\n");
-    /* return 0; */
+
+    return 0;*/
             
     /*
     Print of the initial solutions
     */
     printf("INITIAL SOLUTION: \n");
     printSol(arr, limits, nTours, distMatGen);
+    for(i = 0; i < ncities - 1; ++ i){
+        printf("%d, ", arr[i]);
+    }
+    printf("\n");
+    return 0;
     
 
     for(i = 0; i < its; ++ i){
@@ -38,10 +44,13 @@ int main(int argc, char **argv)
         distMat = distMatGen;*/
     }
     
-    return 0;
     
     printf("\nLongitud del recorrido: %d\n\nRecorrido: ", compute_length(arr));
-    for(i = 0; i < ncitiesGen; ++ i)
+    for(i = 0; i < ncitiesGen; ++ i)    for(i = 0; i < ncitiesGen; ++ i)
+        printf("%d, ", arr[i]);
+    
+    printf("\n");
+    return 0;
         printf("%d ", arr[i]);
     printf("%d\n", arr[0]);
     printf("\n");
@@ -235,8 +244,8 @@ int initSol(int *arr, int *limits, int **dist, int ncities){
     memset(isNotAvailable, 0, ncities * sizeof(int));
     memset(isInTour, 0, ncities * sizeof(int));
     /*Memory allocation for savings*/
-    if((savings = malloc(sizeof( int) * ncities * ncities +
-                sizeof( int *) * ncities )) == NULL){
+    if((savings = malloc(sizeof( int) * (ncities + 1) * (ncities + 1) +
+                sizeof( int *) * (ncities + 1))) == NULL){
         printf("Out of memory, exit.");
         exit(1);
     }
@@ -263,12 +272,11 @@ int initSol(int *arr, int *limits, int **dist, int ncities){
     }
     
     sortPairs(pairs, savings, 0, numPairs);
-
     /*
      * Parallel version of the Clark and Wright algorithm
      */
     for(i = 0; i < numPairs; ++i){
-        /* printf("%d - %d\n", pairs[i]->city0, pairs[i]->city1); */
+        /*printf("Probando el par: %d - %d\n", pairs[i]->city0, pairs[i]->city1);*/
         if(isNotAvailable[pairs[i]->city0] || isNotAvailable[pairs[i]->city1])
             continue;
         
@@ -374,15 +382,18 @@ int initSol(int *arr, int *limits, int **dist, int ncities){
                 tourCap[ammTour] = caps[pairs[i]->city0] + caps[pairs[i]->city1];
                 ammCitiesTour[ammTour] = 2;
                 ++ ammTour;
+                foundMatch = 1;
             }
         }
         
         /*
-         * Both cities are necessarily now part of a tour
+         * Both cities are necessarily now part of a tour if they were matched
          */
-        isInTour[pairs[i]->city0] = 1;
-        isInTour[pairs[i]->city1] = 1;
-        /*
+        if(foundMatch){
+            isInTour[pairs[i]->city0] = 1;
+            isInTour[pairs[i]->city1] = 1;
+        }
+       /* 
         int p0, p1;
         printf("amMTour: %d\n", ammTour);
         for(p0 = 0; p0 < ammTour; ++ p0){
@@ -395,6 +406,16 @@ int initSol(int *arr, int *limits, int **dist, int ncities){
         printf("---------------------------\n");*/
     }
     
+    /*
+     * For every city that was not made part of a tour, create an individual route
+     */
+    for(i = 1; i < ncities; ++ i){
+        if(isInTour[i])
+            continue;
+        tours[ammTour][0] = i;
+        ammCitiesTour[ammTour] = 1;
+        ++ ammTour;
+    }
     /*
      * Now we write each tour and set the limits
      */
