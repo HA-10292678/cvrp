@@ -18,6 +18,35 @@ int mcap, mst, dt, xdepot, ydepot, *caps;
 extern double   *xc, *yc;
 extern int   round_distance (int i, int j);
 
+/*
+ * Function that prints the solution specified by the parameters
+ *
+ * Input: arr -> Array containing the cities
+ *        limits -> Limits of the tours in the preceding array
+ *        nTours -> Ammount of tours contained in the solution
+ *        dist -> Distance matrix
+ * Output: none
+ * Side effects: none
+ */
+void printSol(int *arr, int *limits, int nTours, int **dist);
+
+/*
+ * Function that creates a slight modification on the solution indicated by the
+ * parameters. This modification consists of shifting one city from each tour to
+ * the tour that is directly to the right on the array and afterwards
+ * recalculating the limits
+ *
+ * Input: arr -> Array containing the tours of a solution to CVRP
+ *        limits -> Array containing the positions where tours end on the previous
+ *                  array
+ *        ammTours -> Ammount of tours represented in the parameters
+ *        ncities -> Ammount of cities
+ *        dist -> Distance matrix
+ * Output: Ammount of tours in the new solution
+ * Side effects: arr contains a new, disturbed solution and limits contains the
+ *               boundaries for the new solutions
+ */
+int disturb(int *arr, int *limits, int ammTours, int ncities, int **dist);
 
 /*
  * Function that reads an instance of a crvp problem and sets up the corresponding

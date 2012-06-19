@@ -2,7 +2,7 @@
 
 int main(int argc, char **argv)
 {
-    int i, j, lower, upper, ncitiesGen, nTours;
+    int i, j, lower, upper, ncitiesGen, nTours, its = 1;
     int *arr, *limits;
     int **distMatGen;
     
@@ -18,39 +18,27 @@ int main(int argc, char **argv)
     distMatGen = compute_distances();
     
     nTours = initSol(arr, limits, distMatGen, ncitiesGen);
+    for(i = 0; i < ncitiesGen; ++ i)
+        printf("%d, ", arr[i]);
     
+    printf("\n");
+    return 0;
+            
     /*
     Print of the initial solutions
+    */
+    printf("INITIAL SOLUTION: \n");
+    printSol(arr, limits, nTours, distMatGen);
     
-    int servTime;
-    int capacity;
-    for(i = 0; i < nTours; ++ i){
-        printf("Tour %d: ", i);
-        for(j = (i == 0 ? 0 : limits[i - 1]); j < limits[i]; ++j){
-            printf("%d ", arr[j]);
-        }
-        printf("\n");
-        servTime = 0;
-        capacity = 0;
-        for(j = (i == 0 ? 0 : limits[i - 1]); j < limits[i] - 1; ++ j){
-            servTime += distMatGen[arr[j]][arr[j + 1]] + dt;
-            capacity += caps[arr[j]];
-        }
-        
-        servTime += distMatGen[0][arr[(i == 0 ? 0 : limits[i - 1])]]
-                    + distMatGen[0][arr[limits[i]]]
-                    + dt;
-        capacity += caps[arr[limits[i]]];
-        printf("Service time: %d / %d\n", servTime, mst);
-        printf("Capacity: %d / %d", capacity, mcap);
-        printf("\n\n");
+
+    for(i = 0; i < its; ++ i){
+        nTours = disturb(arr, limits, nTours, ncitiesGen, distMatGen);
+        printSol(arr, limits, nTours, distMatGen);
+        /*boxTSP(arr, lower, upper, distMatGen);
+        distMat = distMatGen;*/
     }
     
-    printf("ncities: %d\n", ncitiesGen);
-    */
-    
-    boxTSP(arr, lower, upper, distMatGen);
-    distMat = distMatGen;
+    return 0;
     
     printf("\nLongitud del recorrido: %d\n\nRecorrido: ", compute_length(arr));
     for(i = 0; i < ncitiesGen; ++ i)
@@ -276,6 +264,7 @@ int initSol(int *arr, int *limits, int **dist, int ncities){
      * Parallel version of the Clark and Wright algorithm
      */
     for(i = 0; i < numPairs; ++i){
+        printf("%d - %d\n", pairs[i]->city0, pairs[i]->city1);
         if(isNotAvailable[pairs[i]->city0] || isNotAvailable[pairs[i]->city1])
             continue;
         
@@ -389,7 +378,6 @@ int initSol(int *arr, int *limits, int **dist, int ncities){
          */
         isInTour[pairs[i]->city0] = 1;
         isInTour[pairs[i]->city1] = 1;
-        
         /*
         int p0, p1;
         printf("amMTour: %d\n", ammTour);
@@ -400,8 +388,7 @@ int initSol(int *arr, int *limits, int **dist, int ncities){
             }
             printf("\n\n");
         }
-        printf("---------------------------\n");
-        */
+        printf("---------------------------\n");*/
     }
     
     /*
@@ -418,6 +405,55 @@ int initSol(int *arr, int *limits, int **dist, int ncities){
     return ammTour;
 }
 
+int disturb(int *arr, int *limits, int ammTours, int ncities, int **dist){
+    int i, startT, endT, tmp0 = -1, tmp1, pos0, ranPos, seed;
+    int ammT = 0, totCap, totTime;
+    
+    /* Perform the sequential swap between tours */
+    for(i = 0; i < ammTours; ++ i){
+        printf("Changing tour: %d / %d\n", i, ammTours);
+        startT = (i == 0 ? 0 : limits[i - 1]);
+        endT = limits[i];
+        seed = (int)(clock());
+        ranPos = (int) (ran01(&seed) * (endT - startT));
+        if(i == 0)
+            pos0 = ranPos;
+        
+        if(i == (ammTours - 1))
+            arr[pos0] = arr[startT + ranPos];
+
+        printf("\tSwapping position: %d\n", ranPos);
+        printf("\tValue: %d, for: %d\n", arr[startT + ranPos], tmp0);
+
+        tmp1 = arr[startT + ranPos];
+        arr[startT + ranPos] = tmp0;
+        tmp0 = tmp1;
+    }
+    
+    /* Recalculate the limits of the tours */
+    totCap = caps[arr[0]];
+    totTime = 2 * dist[0][arr[0]] + dt;
+    for(i = 0; i < ncities - 1; ++ i){
+        if(((totTime - dist[0][arr[i]]) + (dist[arr[i]][arr[i + 1]] + dist[arr[i + 1]][0] + dt) < mst)
+            &&
+            totCap + caps[arr[i + 1]] < mcap){
+            totTime = (totTime - dist[0][arr[i]]) + (dist[arr[i]][arr[i + 1]] + dist[arr[i + 1]][0] + dt);
+            totCap += caps[arr[i + 1]];
+        }else{
+            limits[ammT] = i;
+            ++ ammT;
+            totCap = caps[arr[i + 1]];
+            totTime = 2 * dist[0][arr[i + 1]] + dt;
+        }
+    }
+    
+    if(limits[ammT - 1] != ncities){
+        limits[ammT] = ncities;
+        ++ ammT;
+    }
+    
+    return ammT;
+}
 void sortPairs(city_pair **arr, int **s, int start, int end){
     if(start == end - 1)
         return;
@@ -451,4 +487,29 @@ void sortPairs(city_pair **arr, int **s, int start, int end){
     
     free(tmp);
     return;
+}
+
+void printSol(int *arr, int *limits, int nTours, int **dist){
+    int servTime, capacity, i, j;
+    for(i = 0; i < nTours; ++ i){
+        printf("Tour %d: ", i);
+        for(j = (i == 0 ? 0 : limits[i - 1]); j < limits[i]; ++j){
+            printf("%d ", arr[j]);
+        }
+        printf("\n");
+        servTime = 0;
+        capacity = 0;
+        for(j = (i == 0 ? 0 : limits[i - 1]); j < limits[i] - 1; ++ j){
+            servTime += dist[arr[j]][arr[j + 1]] + dt;
+            capacity += caps[arr[j]];
+        }
+        
+        servTime += dist[0][arr[(i == 0 ? 0 : limits[i - 1])]]
+                    + dist[0][arr[limits[i]]]
+                    + dt;
+        capacity += caps[arr[limits[i]]];
+        printf("Service time: %d / %d\n", servTime, mst);
+        printf("Capacity: %d / %d", capacity, mcap);
+        printf("\n\n");
+    }     
 }
