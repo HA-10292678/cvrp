@@ -22,7 +22,7 @@ int main(int argc, char **argv)
         printf("%d, ", arr[i]);
     
     printf("\n");
-    return 0;
+    /* return 0; */
             
     /*
     Print of the initial solutions
@@ -60,20 +60,24 @@ void read_cvrp(char *filename){
 
     /* number of customers, vehicle capacity, maximum route time, drop time */
     fscanf(cvrp_file, "%d %d %d %d", &ncities, &mcap, &mst, &dt);
-    /* depot x-coordinate, depot y-coordinate */
-    fscanf(cvrp_file, "%d %d", &xdepot, &ydepot);
+    /* printf("ncities: %d, mcap: %d, mst: %d, dt: %d\n", ncities, mcap, mst, dt); */
 
     if( (xc = malloc(sizeof(double) * ncities)) == NULL )
 	exit(EXIT_FAILURE);
     if( (yc = malloc(sizeof(double) * ncities)) == NULL )
 	exit(EXIT_FAILURE);
+
+    /* depot x-coordinate, depot y-coordinate */
+    fscanf(cvrp_file, "%d %d", &xc[0], &yc[0]);
+    ncities ++;
+
     if( (caps = malloc(sizeof(int) * ncities)) == NULL )
 	exit(EXIT_FAILURE);
    
     caps = malloc(sizeof(int) * (ncities));
     /* for each customer in turn: x-coordinate, y-coordinate, quantity */
     int i;
-    for (i = 0 ; i < ncities ; i++ ) {
+    for (i = 1 ; i < ncities ; i++ ) {
         fscanf(cvrp_file,"%lf %lf %d", &xc[i], &yc[i], &caps[i] );
     }
 
@@ -264,7 +268,7 @@ int initSol(int *arr, int *limits, int **dist, int ncities){
      * Parallel version of the Clark and Wright algorithm
      */
     for(i = 0; i < numPairs; ++i){
-        printf("%d - %d\n", pairs[i]->city0, pairs[i]->city1);
+        /* printf("%d - %d\n", pairs[i]->city0, pairs[i]->city1); */
         if(isNotAvailable[pairs[i]->city0] || isNotAvailable[pairs[i]->city1])
             continue;
         
@@ -406,7 +410,8 @@ int initSol(int *arr, int *limits, int **dist, int ncities){
 }
 
 int disturb(int *arr, int *limits, int ammTours, int ncities, int **dist){
-    int i, startT, endT, tmp0 = -1, tmp1, pos0, ranPos, seed;
+    int i, startT, endT, tmp0 = -1, tmp1, pos0, ranPos;
+    long seed;
     int ammT = 0, totCap, totTime;
     
     /* Perform the sequential swap between tours */
@@ -414,7 +419,7 @@ int disturb(int *arr, int *limits, int ammTours, int ncities, int **dist){
         printf("Changing tour: %d / %d\n", i, ammTours);
         startT = (i == 0 ? 0 : limits[i - 1]);
         endT = limits[i];
-        seed = (int)(clock());
+        seed = (long)(clock());
         ranPos = (int) (ran01(&seed) * (endT - startT));
         if(i == 0)
             pos0 = ranPos;
@@ -504,8 +509,18 @@ void printSol(int *arr, int *limits, int nTours, int **dist){
             capacity += caps[arr[j]];
         }
         
-        servTime += dist[0][arr[(i == 0 ? 0 : limits[i - 1])]]
-                    + dist[0][arr[limits[i]]]
+        int k = (i == 0 ? 0 : limits[i - 1]),
+            j = arr[k],
+            l = limits[i],
+            m = arr[l],
+            n = dist[0][j],
+            o = dist[0][m];
+        /*printf("dist[0][0]: %d\n", dist[0][0]);
+        printf("n: %d\n", n);
+        printf("o: %d\n", o);
+        printf("dt: %d\n", dt);*/
+        servTime += n
+                    + o
                     + dt;
         capacity += caps[arr[limits[i]]];
         printf("Service time: %d / %d\n", servTime, mst);
