@@ -18,32 +18,33 @@ int main(int argc, char **argv)
     distMatGen = compute_distances();
     
     nTours = initSol(arr, limits, distMatGen, ncitiesGen);
-    /*for(i = 0; i < ncitiesGen; ++ i)
+    /*
+    for(i = 0; i < ncitiesGen; ++ i)
         printf("%d, ", arr[i]);
     
     printf("\n");
 
-    return 0;*/
-            
-    /*
-    Print of the initial solutions
+    return 0;
     */
+            
+    /* Print of the initial solutions */
+    /*
     printf("INITIAL SOLUTION: \n");
     printSol(arr, limits, nTours, distMatGen);
-    for(i = 0; i < ncities - 1; ++ i){
-        printf("%d, ", arr[i]);
-    }
-    printf("\n");
-    return 0;
-    
+    */
 
     for(i = 0; i < its; ++ i){
         nTours = disturb(arr, limits, nTours, ncitiesGen, distMatGen);
+        /*
         printSol(arr, limits, nTours, distMatGen);
-        /*boxTSP(arr, lower, upper, distMatGen);
-        distMat = distMatGen;*/
+        */
+        /*
+        boxTSP(arr, lower, upper, distMatGen);
+        distMat = distMatGen;
+        */
     }
     
+    return 0;
     
     printf("\nLongitud del recorrido: %d\n\nRecorrido: ", compute_length(arr));
     for(i = 0; i < ncitiesGen; ++ i)    for(i = 0; i < ncitiesGen; ++ i)
@@ -437,19 +438,23 @@ int disturb(int *arr, int *limits, int ammTours, int ncities, int **dist){
     
     /* Perform the sequential swap between tours */
     for(i = 0; i < ammTours; ++ i){
+        /*
         printf("Changing tour: %d / %d\n", i, ammTours);
+        */
         startT = (i == 0 ? 0 : limits[i - 1]);
         endT = limits[i];
-        seed = (long)(clock());
-        ranPos = (int) (ran01(&seed) * (endT - startT));
+        seed = (long)(time(&seed));
+        ranPos = random_number(&seed) % (endT - startT);
         if(i == 0)
             pos0 = ranPos;
         
         if(i == (ammTours - 1))
             arr[pos0] = arr[startT + ranPos];
 
+        /*
         printf("\tSwapping position: %d\n", ranPos);
         printf("\tValue: %d, for: %d\n", arr[startT + ranPos], tmp0);
+        */
 
         tmp1 = arr[startT + ranPos];
         arr[startT + ranPos] = tmp0;
@@ -466,7 +471,10 @@ int disturb(int *arr, int *limits, int ammTours, int ncities, int **dist){
             totTime = (totTime - dist[0][arr[i]]) + (dist[arr[i]][arr[i + 1]] + dist[arr[i + 1]][0] + dt);
             totCap += caps[arr[i + 1]];
         }else{
-            limits[ammT] = i;
+            limits[ammT] = i + 1;
+            /*
+            printf("Limit for tour %d: %d\n", ammT, limits[ammT]);
+            */
             ++ ammT;
             totCap = caps[arr[i + 1]];
             totTime = 2 * dist[0][arr[i + 1]] + dt;
@@ -536,10 +544,12 @@ void printSol(int *arr, int *limits, int nTours, int **dist){
             m = arr[l],
             n = dist[0][j],
             o = dist[0][m];
-        /*printf("dist[0][0]: %d\n", dist[0][0]);
+        /*
+        printf("dist[0][0]: %d\n", dist[0][0]);
         printf("n: %d\n", n);
         printf("o: %d\n", o);
-        printf("dt: %d\n", dt);*/
+        printf("dt: %d\n", dt);
+        */
         servTime += n
                     + o
                     + dt;
