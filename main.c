@@ -61,6 +61,7 @@ void read_cvrp(char *filename){
     /* number of customers, vehicle capacity, maximum route time, drop time */
     fscanf(cvrp_file, "%d %d %d %d", &ncities, &mcap, &mst, &dt);
     /* printf("ncities: %d, mcap: %d, mst: %d, dt: %d\n", ncities, mcap, mst, dt); */
+    ncities ++;
 
     if( (xc = malloc(sizeof(double) * ncities)) == NULL )
 	exit(EXIT_FAILURE);
@@ -69,7 +70,6 @@ void read_cvrp(char *filename){
 
     /* depot x-coordinate, depot y-coordinate */
     fscanf(cvrp_file, "%d %d", &xc[0], &yc[0]);
-    ncities ++;
 
     if( (caps = malloc(sizeof(int) * ncities)) == NULL )
 	exit(EXIT_FAILURE);
