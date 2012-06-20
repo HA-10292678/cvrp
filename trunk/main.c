@@ -2,7 +2,7 @@
 
 int main(int argc, char **argv)
 {
-    int i, j, lower, upper, ncitiesGen, nTours, its = 1;
+    int i, j, ncitiesGen, nTours, its = 1;
     int *arr, *limits;
     int **distMatGen;
     
@@ -18,43 +18,23 @@ int main(int argc, char **argv)
     distMatGen = compute_distances();
     
     nTours = initSol(arr, limits, distMatGen, ncitiesGen);
-    /*
-    for(i = 0; i < ncitiesGen; ++ i)
-        printf("%d, ", arr[i]);
-    
-    printf("\n");
 
-    return 0;
-    */
-            
+
     /* Print of the initial solutions */
-    /*
     printf("INITIAL SOLUTION: \n");
     printSol(arr, limits, nTours, distMatGen);
-    */
 
     for(i = 0; i < its; ++ i){
         nTours = disturb(arr, limits, nTours, ncitiesGen, distMatGen);
-        /*
-        printSol(arr, limits, nTours, distMatGen);
-        */
-        /*
-        boxTSP(arr, lower, upper, distMatGen);
-        distMat = distMatGen;
-        */
+        for (j = 0; j < nTours; ++ j) {
+            int lower = (i == 0 ? 0 : limits[i - 1]),
+                upper = limits[i];
+            boxTSP(arr, lower, upper, distMatGen);
+        }
     }
     
-    return 0;
-    
-    printf("\nLongitud del recorrido: %d\n\nRecorrido: ", compute_length(arr));
-    for(i = 0; i < ncitiesGen; ++ i)    for(i = 0; i < ncitiesGen; ++ i)
-        printf("%d, ", arr[i]);
-    
-    printf("\n");
-    return 0;
-        printf("%d ", arr[i]);
-    printf("%d\n", arr[0]);
-    printf("\n");
+    printf("FINAL SOLUTION: \n");
+    printSol(arr, limits, nTours, distMatGen);
 
     return 1;
 }
@@ -79,7 +59,7 @@ void read_cvrp(char *filename){
 	exit(EXIT_FAILURE);
 
     /* depot x-coordinate, depot y-coordinate */
-    fscanf(cvrp_file, "%d %d", &xc[0], &yc[0]);
+    fscanf(cvrp_file, "%lf %lf", &xc[0], &yc[0]);
 
     if( (caps = malloc(sizeof(int) * ncities)) == NULL )
 	exit(EXIT_FAILURE);
@@ -98,7 +78,9 @@ void boxTSP(int *arr, int lower, int upper, int **distMatGen){
     int *best;
     int i, j;
     
-    ncities = upper - lower + 1;
+    /* esto no incluye el depósito */
+    ncities = upper - lower + 2;
+    /* hay que agregar espacio para la ciudad final que es igual a la inicial */
     best = malloc(sizeof(int) * (ncities + 1));
 
     /* Code taken from compute_distances (With light modifications) */
@@ -110,20 +92,28 @@ void boxTSP(int *arr, int lower, int upper, int **distMatGen){
     
     for ( i = 0 ; i < ncities ; i++ ) {
         distMat[i] = (int *)(distMat + ncities) + i*ncities;
+        /* la ciudad cero es el depósito. todas las demás están desplazadas por él */
+        int ik = 0 == i ? 0 : i + lower - 1;
         for ( j = 0  ; j < ncities ; j++ ) {
-        distMat[i][j] = distMatGen[arr[i + lower]][arr[j + lower]];
+            /* la ciudad cero es el depósito. todas las demás están desplazadas por él */
+            int jk = 0 == j ? 0 : j + lower - 1;
+            distMat[i][j] = distMatGen[arr[ik]][arr[jk]];
         }
     }
     /*End of code taken from compute_distances*/
     
     tsp(best);
     
-    for(i = 0; i < ncities; ++i)
-        best[i] = arr[best[i] + lower];
-    
-    for(i = 0; i < ncities; ++i)
-        arr[i + lower] = best[i];
-    
+    int dp;
+    for(i = 0; i < ncities; ++i){
+        if (best[i] == 0) dp = i;
+        best[i] = 0 == best[i] ? 0 : arr[best[i] + lower - 1];
+    }
+
+    for(i = 1; i < ncities; ++i) {
+        arr[i + lower - 1] = best[((i + dp) % ncities)];
+    }
+
     free(distMat);
     free(best);
 }
@@ -145,6 +135,7 @@ void tsp(int *best){
 
     for(i = 0; i <= ncities; ++i){
         best[i] = vc[i];
+        printf("best[%d] = %d\n", i, best[i]);
     }
 
     for(t = 0; t < max; ++t){
@@ -537,21 +528,10 @@ void printSol(int *arr, int *limits, int nTours, int **dist){
             servTime += dist[arr[j]][arr[j + 1]] + dt;
             capacity += caps[arr[j]];
         }
-        
-        int k = (i == 0 ? 0 : limits[i - 1]),
-            j = arr[k],
-            l = limits[i],
-            m = arr[l],
-            n = dist[0][j],
-            o = dist[0][m];
-        /*
-        printf("dist[0][0]: %d\n", dist[0][0]);
-        printf("n: %d\n", n);
-        printf("o: %d\n", o);
-        printf("dt: %d\n", dt);
-        */
-        servTime += n
-                    + o
+
+        int k = (i == 0 ? 0 : limits[i - 1]);
+        servTime += dist[0][arr[k]]
+                    + dist[0][arr[limits[i]]]
                     + dt;
         capacity += caps[arr[limits[i]]];
         printf("Service time: %d / %d\n", servTime, mst);
