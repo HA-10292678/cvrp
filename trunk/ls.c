@@ -196,6 +196,8 @@ void two_opt_b( int *tour ) {
 */
 
     int i, j, h, l, temp;
+    h = 0;
+    l = 0;
     int n_inner_loop;
     int improvement_flag = TRUE;
     int gain, max_gain;
@@ -258,6 +260,8 @@ void two_opt_first( int *tour ) {
     int pred_c1, pred_c2;     /* predecessors of c1 and c2         */   
     int pos_c1, pos_c2;     /* positions of cities c1, c2        */
     int i, j, h, l;
+    h = 0;
+    l = 0;
     int improvement_flag, improve_node, help, n_improves = 0, n_exchanges=0;
     int h1=0, h2=0, h3=0, h4=0;
     int radius;             /* radius of nn-search */
@@ -708,8 +712,8 @@ void accept( int *t, int *l, int *s, int i )
 	    t[j] = s[j];
 	iteration_best_found = i;
 	time_best_found = fabs(elapsed_time( VIRTUAL ));
-	printf("best %d\t time %f\t iteration %d\n",help,time_best_found,i);
-	fprintf(comp_report,"best %d\t time %f\t iteration %d\n",help,time_best_found,i);
+	/* printf("best %d\t time %f\t iteration %d\n",help,time_best_found,i); */
+	/* fprintf(comp_report,"best %d\t time %f\t iteration %d\n",help,time_best_found,i); */
     }
 
 }
@@ -1051,7 +1055,7 @@ long int three_opt_first( int *tour )
 		      val[0] = n1; val[1] = n2; val[2] = n3; 
 		      /* Now order the partial tours */
 		      h = 0;
-		      help = LONG_MIN;
+		      help = INT_MIN;
 		      for ( g = 0; g <= 2; g++) {
 			  if ( help < val[g] ) {
 			      help = val[g];
@@ -1228,7 +1232,7 @@ long int three_opt_first( int *tour )
 		      val[0] = n1; val[1] = n2; val[2] = n3; 
 		      /* Now order the partial tours */
 		      h = 0;
-		      help = LONG_MIN;
+		      help = INT_MIN;
 		      for ( g = 0; g <= 2; g++) {
 			  if ( help < val[g] ) {
 			      help = val[g];
@@ -1417,7 +1421,7 @@ long int three_opt_first( int *tour )
 		      val[0] = n1; val[1] = n2; val[2] = n3; 
 		      /* Determine which is the longest part */
 		      h = 0;
-		      help = LONG_MIN;
+		      help = INT_MIN;
 		      for ( g = 0; g <= 2; g++) {
 			  if ( help < val[g] ) {
 			      help = val[g];
@@ -1608,7 +1612,7 @@ long int three_opt_first( int *tour )
 		      val[0] = n1; val[1] = n2; val[2] = n3; 
 		      /* Determine which is the longest part */
 		      h = 0;
-		      help = LONG_MIN;
+		      help = INT_MIN;
 		      for ( g = 0; g <= 2; g++) {
 			  if ( help < val[g] ) {
 			      help = val[g];
