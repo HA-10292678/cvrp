@@ -32,6 +32,7 @@ int main(int argc, char **argv)
             boxTSP(arr, lower, upper, distMatGen);
         }
     }
+    ncities = ncitiesGen;
     
     printf("FINAL SOLUTION: \n");
     printSol(arr, limits, nTours, distMatGen);
@@ -120,7 +121,7 @@ void boxTSP(int *arr, int lower, int upper, int **distMatGen){
 
 void tsp(int *best){
     int *vc, *vn, *tmp;
-    int t, max = 5000, i;
+    int t, max = 5000, i, j;
     double T = 1500000, prob, ran;
     clock_t ticks;
 
@@ -135,7 +136,6 @@ void tsp(int *best){
 
     for(i = 0; i <= ncities; ++i){
         best[i] = vc[i];
-        printf("best[%d] = %d\n", i, best[i]);
     }
 
     for(t = 0; t < max; ++t){
@@ -530,9 +530,22 @@ void printSol(int *arr, int *limits, int nTours, int **dist){
         }
 
         int k = (i == 0 ? 0 : limits[i - 1]);
-        servTime += dist[0][arr[k]]
-                    + dist[0][arr[limits[i]]]
+        int j = arr[k];
+        int l = limits[i];
+        printf("ncities: %d, l: %d\n", ncities, l);
+        int m = arr[l];
+        printf("m: %d\n", m);
+        int n = dist[0][j];
+        int o = dist[0][m];
+
+        printf("dist[0][0]: %d\n", dist[0][0]);
+        printf("n: %d\n", n);
+        printf("o: %d\n", o);
+        printf("dt: %d\n", dt);
+        servTime += n
+                    + o
                     + dt;
+
         capacity += caps[arr[limits[i]]];
         printf("Service time: %d / %d\n", servTime, mst);
         printf("Capacity: %d / %d", capacity, mcap);

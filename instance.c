@@ -45,6 +45,7 @@
 ***************************************************************************/
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <math.h>
 #include <limits.h>
@@ -246,7 +247,7 @@ void read_instance(const char *tsp_file_name)
 	exit(1);
     }
     assert(tsp_file != NULL);
-    printf("\nreading tsp-file %s ... \n\n", tsp_file_name);
+    /* printf("\nreading tsp-file %s ... \n\n", tsp_file_name);*/
 
     fscanf(tsp_file,"%s", buf);
     while ( strcmp("NODE_COORD_SECTION", buf) != 0 ) {
@@ -408,11 +409,10 @@ int compute_length ( int *t )
 {
   int  i;
   int  t_length = 0;
-
-  for ( i = 0 ; i < ncities - 1; i++ ) {
+  
+  for ( i = 0 ; i < ncities ; i++ ) {
       t_length += distMat[t[i]][t[i+1]];
    }
-   t_length += distMat[t[ncities - 1]][t[0]];
    return t_length;
 }
 
@@ -448,7 +448,7 @@ int **compute_NNLists( void )
       distance_vector[i] = distMat[node][i];
       help_vector[i] = i;
     }
-    distance_vector[node] = LONG_MAX;  /* city is not nearest neighbour */
+    distance_vector[node] = INT_MAX;  /* city is not nearest neighbour */
     sort(distance_vector, help_vector, 0, ncities-1);
     for ( i = 0 ; i < nn_ls ; i++ ) {
       m_nnear[node][i] = help_vector[i];
