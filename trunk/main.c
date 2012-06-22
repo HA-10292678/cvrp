@@ -2,44 +2,105 @@
 
 int main(int argc, char **argv)
 {
-    int i, j, ncitiesGen, nTours, its = 1;
-    int *arr, *limits;
+    int i, j, ncitiesGen, nTours, its = 40, itBest = 0, ntBest;
+    int *arr, *limits, *best, *limitsBest;
+    time_t tBest, start, end;
     int **distMatGen;
+    char fileName[100], *tmp, fnd[100];
+    FILE *outFile;
     
     read_cvrp(argv[1]);
     
     ncitiesGen = ncities;
     arr = malloc(sizeof(int) * (ncitiesGen + 1));
     limits = malloc(sizeof(int) * (ncitiesGen + 1));
+    best = malloc(sizeof(int) * (ncitiesGen + 1));
+    limitsBest = malloc(sizeof(int) * (ncitiesGen + 1));
     
+    time(&start);
     for(i = 0; i < ncitiesGen; ++ i)
         arr[i] = i;
     
     distMatGen = compute_distances();
-    
+
     nTours = initSol(arr, limits, distMatGen, ncitiesGen);
-
-
+    time(&tBest);
+    
     /* Print of the initial solutions */
     printf("INITIAL SOLUTION: \n");
     printSol(arr, limits, nTours, distMatGen);
-
+    
+    /*Copy the new solution into the best solution*/
+    for(i = 0; i < ncitiesGen; ++ i)
+        best[i] = arr[i];
+    
+    for(i = 0; i < nTours; ++ i)
+        limitsBest[i] = limits[i];
+    
+    ntBest = nTours;
+    compareTours(best, limitsBest, ntBest, best, limitsBest, ntBest, distMatGen);
+    /*Start iterating*/
     for(i = 0; i < its; ++ i){
+        /*Disturbance*/
         nTours = disturb(arr, limits, nTours, ncitiesGen, distMatGen);
+        /*Local seacrh*/
         for (j = 0; j < nTours; ++ j) {
-            int lower = (i == 0 ? 0 : limits[i - 1]),
-                upper = limits[i];
+            int lower = (j == 0 ? 0 : limits[j - 1]),
+                upper = limits[j];
+
             boxTSP(arr, lower, upper, distMatGen);
+        }
+        
+        /*Check if a better solution was found*/
+        if(compareTours(arr, limits, nTours, best, limitsBest, ntBest, distMatGen) == 1){
+            for(i = 0; i < ncities; ++ i)
+                best[i] = arr[i];            
+            for(i = 0; i < nTours; ++ i)
+                limitsBest[i] = limits[i];
+            ntBest = nTours;
+            time(&tBest);
+            itBest = i;
         }
     }
     
+    time(&end);
+    tmp = strtok(argv[1], "/");
+    while(tmp != NULL){
+        sprintf(fnd, "%s", tmp);
+        tmp = strtok(NULL, "/");
+    }
+    
+    sprintf(fileName, "Resultados/stat.%s", fnd);
+    outFile = fopen(fileName, "w");
+    fprintf(outFile, "Distance of best solution: %d\n", dBest);
+    fprintf(outFile, "Iteration where best solution was found: %d\n", itBest);
+    fprintf(outFile, "Total number of iterations: %d\n", its);
+    fprintf(outFile, "Time to find best solution: %d\n", (int)(tBest - start));
+    fprintf(outFile, "Total run time: %d\n", (int)(end - start));
+    fprintf(outFile, "Best solutions number of routes: %d\n", ntBest);
+    for(i = 0; i < ntBest; ++ i){
+        fprintf(outFile, "Tour %d: 0", i);
+        int st = (i == 0 ? 0 : limitsBest[i - 1]);
+        for(j = st; j < limitsBest[i]; ++ j)
+            fprintf(outFile, " %d", best[j]);
+        fprintf(outFile, " 0\n");
+    }
+    /*Print the final solution
     printf("FINAL SOLUTION: \n");
-    printSol(arr, limits, nTours, distMatGen);
+    printSol(arr, limits, nTours, distMatGen);*/
 
+    free(arr);
+    free(limits);
+    free(best);
+    free(limitsBest);
+    free(distMatGen);
+    free(tmp);
+    printf("Finalizada la ejecución del programa\n");
     return 1;
 }
 
-void read_cvrp(char *filename){
+void read_cvrp(char *filename)
+{
 
     FILE *cvrp_file = fopen(filename, "r");
     if ( cvrp_file == NULL ) {
@@ -72,6 +133,7 @@ void read_cvrp(char *filename){
     }
 
     distance = round_distance;
+    free(cvrp_file);
 }
 
 void boxTSP(int *arr, int lower, int upper, int **distMatGen){
@@ -79,7 +141,8 @@ void boxTSP(int *arr, int lower, int upper, int **distMatGen){
     int i, j;
     
     /* esto no incluye el depósito */
-    ncities = upper - lower + 2;
+    ncities = upper - lower + 1;
+    
     /* hay que agregar espacio para la ciudad final que es igual a la inicial */
     best = malloc(sizeof(int) * (ncities + 1));
 
@@ -120,7 +183,7 @@ void boxTSP(int *arr, int lower, int upper, int **distMatGen){
 
 void tsp(int *best){
     int *vc, *vn, *tmp;
-    int t, max = 5000, i, j;
+    int t, max = 5000, i;
     double T = 1500000, prob, ran;
     clock_t ticks;
 
@@ -171,6 +234,7 @@ void tsp(int *best){
         free(dlb);
     }
 
+    free(tmp);
     free(vn);
     free(vc);
     
@@ -225,7 +289,8 @@ int initSol(int *arr, int *limits, int **dist, int ncities){
     int foundMatch = 0;
     int isNotAvailable[ncities], isInTour[ncities];
     int tourTime[numPairs], ammCitiesTour[numPairs], tourCap[numPairs], *at;
-    int **savings, tours[numPairs][ncities];
+    int **savings;
+    int *tours[numPairs];
     city_pair **pairs = malloc(numPairs * sizeof(city_pair *));
     city_pair *pair;
    
@@ -234,6 +299,10 @@ int initSol(int *arr, int *limits, int **dist, int ncities){
     memset(tourCap, 0, numPairs * sizeof(int));
     memset(isNotAvailable, 0, ncities * sizeof(int));
     memset(isInTour, 0, ncities * sizeof(int));
+    
+    /*Memory allocation for tours*/
+    for(i = 0; i < numPairs; ++ i)
+        tours[i] = (int *)malloc(ncities * sizeof(int));
     /*Memory allocation for savings*/
     if((savings = malloc(sizeof( int) * (ncities + 1) * (ncities + 1) +
                 sizeof( int *) * (ncities + 1))) == NULL){
@@ -418,6 +487,15 @@ int initSol(int *arr, int *limits, int **dist, int ncities){
         limits[i] = start + ammCitiesTour[i];
     }
     
+    for(i = 0; i < ammTour; ++ i)
+        free(tours[i]);
+    
+    for(i = 0; i < numPairs; ++ i)
+        free(pairs[i]);
+    
+    free(pairs);
+    free(savings);
+    
     return ammTour;
 }
 
@@ -471,8 +549,8 @@ int disturb(int *arr, int *limits, int ammTours, int ncities, int **dist){
         }
     }
     
-    if(limits[ammT - 1] != ncities){
-        limits[ammT] = ncities;
+    if(limits[ammT - 1] != (ncities - 1)){
+        limits[ammT] = ncities - 1;
         ++ ammT;
     }
     
@@ -537,4 +615,35 @@ void printSol(int *arr, int *limits, int nTours, int **dist){
         printf("Capacity: %d / %d", capacity, mcap);
         printf("\n\n");
     }     
+}
+
+int compareTours(int *arr0, int *limits0, int nTours0, int *arr1, int *limits1, int nTours1, int **dist){
+    int totDist0 = 0, totDist1 = 0, i, j, start;
+    
+    /*Calculate distance in tour 0*/
+    for(i = 0; i < nTours0; ++ i){
+        start = (i == 0 ? 0 : limits0[i - 1]);
+        totDist0 += dist[0][arr0[start]];
+        for(j = start; j < limits0[i] - 2; ++ j)
+            totDist0 += dist[arr0[j]][arr0[j + 1]];
+        totDist0 += dist[0][arr0[limits0[i] - 1]];
+    }
+    
+    /*Calculate distance in tour 1*/
+    for(i = 0; i < nTours1; ++ i){
+        start = (i == 0 ? 0 : limits1[i - 1]);
+        totDist1 += dist[0][arr1[start]];
+        for(j = start; j < limits1[i] - 2; ++ j)
+            totDist1 += dist[arr1[j]][arr1[j + 1]];
+        totDist1 += dist[0][arr1[limits1[i] - 1]];
+    }
+    
+    printf("totDist0: %d, totDist1: %d\n", totDist0, totDist1);
+    if(totDist0 < totDist1){
+        dBest = totDist0;
+        return 1;
+    }
+    
+    dBest = totDist1;
+    return 0;
 }

@@ -13,11 +13,25 @@ typedef struct
     int city1;
 }city_pair;
 
-int mcap, mst, dt, xdepot, ydepot, *caps;
+int mcap, mst, dt, xdepot, ydepot, dBest, *caps;
 
 extern double   *xc, *yc;
 extern int   round_distance (int i, int j);
 
+/*
+ * Function that evaluates wether a tour is better than another
+ *
+ * Input: arr0 -> Cities that describe solution 0
+ *        limits0 -> Limits of solution 0
+ *        nTours0 -> Number of tours represented on solution 0
+ *        arr1 -> Cities that describe solution 1
+ *        limits1 -> Limits of solution 1
+ *        nTours1 -> Number of tours represented on solution 1
+ *        dist -> Distance matrix
+ * Output: 1 if arr0 is a better solution than arr1, 0 otherwise
+ * Side effects: none
+ */
+int compareTours(int *arr0, int *limits0, int nTours0, int *arr1, int *limits1, int nTours1, int **dist);
 /*
  * Function that prints the solution specified by the parameters
  *
