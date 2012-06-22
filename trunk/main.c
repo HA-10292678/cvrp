@@ -26,9 +26,9 @@ int main(int argc, char **argv)
     nTours = initSol(arr, limits, distMatGen, ncitiesGen);
     time(&tBest);
     
-    /* Print of the initial solutions */
+    /* Print of the initial solutions
     printf("INITIAL SOLUTION: \n");
-    printSol(arr, limits, nTours, distMatGen);
+    printSol(arr, limits, nTours, distMatGen); */
     
     /*Copy the new solution into the best solution*/
     for(i = 0; i < ncitiesGen; ++ i)
@@ -89,13 +89,14 @@ int main(int argc, char **argv)
     printf("FINAL SOLUTION: \n");
     printSol(arr, limits, nTours, distMatGen);*/
 
+    fclose(outFile);
     free(arr);
     free(limits);
     free(best);
     free(limitsBest);
     free(distMatGen);
     free(tmp);
-    printf("Finalizada la ejecución del programa\n");
+    printf("Program has ended successfully\n");
     return 1;
 }
 
@@ -133,7 +134,7 @@ void read_cvrp(char *filename)
     }
 
     distance = round_distance;
-    free(cvrp_file);
+    fclose(cvrp_file);
 }
 
 void boxTSP(int *arr, int lower, int upper, int **distMatGen){
@@ -638,7 +639,7 @@ int compareTours(int *arr0, int *limits0, int nTours0, int *arr1, int *limits1, 
         totDist1 += dist[0][arr1[limits1[i] - 1]];
     }
     
-    printf("totDist0: %d, totDist1: %d\n", totDist0, totDist1);
+    /*printf("totDist0: %d, totDist1: %d\n", totDist0, totDist1);*/
     if(totDist0 < totDist1){
         dBest = totDist0;
         return 1;
