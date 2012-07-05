@@ -1,0 +1,13 @@
+Distance of best solution: 524
+Iteration where best solution was found: 0
+Total number of iterations: 40
+Time to find best solution: 0
+Total run time: 88
+Best solutions number of routes: 7
+Tour 0: 0 11 2 20 35 36 3 22 32 0
+Tour 1: 0 37 44 42 19 40 41 13 25 14 0
+Tour 2: 0 16 9 50 29 21 34 30 39 33 45 15 17 0
+Tour 3: 0 1 28 31 26 8 27 0
+Tour 4: 0 48 23 7 43 24 6 0
+Tour 5: 0 12 5 10 49 38 46 0
+Tour 6: 0 47 4 18 0
