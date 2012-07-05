@@ -1,0 +1,23 @@
+Distance of best solution: 1132
+Iteration where best solution was found: 0
+Total number of iterations: 40
+Time to find best solution: 0
+Total run time: 25
+Best solutions number of routes: 17
+Tour 0: 0 122 20 128 66 71 65 136 35 135 34 78 129 79 3 77 0
+Tour 1: 0 37 14 119 44 38 140 86 141 16 91 100 98 92 0
+Tour 2: 0 7 123 19 107 11 64 49 143 36 47 124 46 8 114 0
+Tour 3: 0 146 127 88 148 62 90 63 126 108 10 31 0
+Tour 4: 0 53 110 4 139 39 67 23 56 75 72 21 0
+Tour 5: 0 27 132 69 101 70 32 131 30 0
+Tour 6: 0 1 51 103 9 120 81 33 102 50 0
+Tour 7: 0 26 149 25 55 130 54 105 0
+Tour 8: 0 5 84 17 113 61 85 93 59 94 0
+Tour 9: 0 137 144 57 15 43 142 42 87 97 95 117 13 0
+Tour 10: 0 18 45 125 83 89 0
+Tour 11: 0 28 138 109 134 24 29 121 68 116 76 111 0
+Tour 12: 0 58 2 115 145 41 22 133 74 73 40 0
+Tour 13: 0 52 106 48 82 0
+Tour 14: 0 80 150 12 0
+Tour 15: 0 60 118 147 0
+Tour 16: 0 6 99 104 96 112 0
